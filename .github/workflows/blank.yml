@@ -1,0 +1,191 @@
+# Import the arcade library
+import arcade
+
+# Define some constants for the game
+SCREEN_WIDTH = 800
+SCREEN_HEIGHT = 600
+SCREEN_TITLE = "Platformer Game"
+
+# Define the gravity and the speed of the player
+GRAVITY = 1
+PLAYER_SPEED = 5
+PLAYER_JUMP_SPEED = 15
+
+# Define the colors for the ground and the platforms
+GROUND_COLOR = arcade.color.DARK_GREEN
+PLATFORM_COLOR = arcade.color.BROWN
+
+# Define the size and the position of the ground and the platforms
+GROUND_HEIGHT = 50
+GROUND_WIDTH = SCREEN_WIDTH
+GROUND_X = SCREEN_WIDTH / 2
+GROUND_Y = GROUND_HEIGHT / 2
+
+PLATFORM_HEIGHT = 20
+PLATFORM_WIDTH = 150
+PLATFORM_1_X = 250
+PLATFORM_1_Y = 150
+PLATFORM_2_X = 550
+PLATFORM_2_Y = 250
+
+# Define the size and the position of the coins
+COIN_SIZE = 16
+COIN_1_X = 300
+COIN_1_Y = 200
+COIN_2_X = 600
+COIN_2_Y = 300
+
+# Define the size and the position of the player
+PLAYER_SIZE = 32
+PLAYER_START_X = 100
+PLAYER_START_Y = 100
+
+# Define the font and the position of the score
+SCORE_FONT = "Arial"
+SCORE_FONT_SIZE = 18
+SCORE_COLOR = arcade.color.WHITE
+SCORE_X = 10
+SCORE_Y = SCREEN_HEIGHT - 10
+
+# Create a class for the game window
+class GameWindow(arcade.Window):
+    # Initialize the game window
+    def __init__(self):
+        # Call the parent class constructor
+        super().__init__(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
+
+        # Set the background color
+        arcade.set_background_color(arcade.color.SKY_BLUE)
+
+        # Create a sprite list for the coins
+        self.coin_list = arcade.SpriteList()
+
+        # Create a sprite list for the player
+        self.player_list = arcade.SpriteList()
+
+        # Create a sprite for the player and add it to the player list
+        self.player = arcade.Sprite("images/player.png", PLAYER_SIZE / 64)
+        self.player.center_x = PLAYER_START_X
+        self.player.center_y = PLAYER_START_Y
+        self.player_list.append(self.player)
+
+        # Create a sprite for the first coin and add it to the coin list
+        self.coin_1 = arcade.Sprite("images/coin.png", COIN_SIZE / 64)
+        self.coin_1.center_x = COIN_1_X
+        self.coin_1.center_y = COIN_1_Y
+        self.coin_list.append(self.coin_1)
+
+        # Create a sprite for the second coin and add it to the coin list
+        self.coin_2 = arcade.Sprite("images/coin.png", COIN_SIZE / 64)
+        self.coin_2.center_x = COIN_2_X
+        self.coin_2.center_y = COIN_2_Y
+        self.coin_list.append(self.coin_2)
+
+        # Create a variable for the score
+        self.score = 0
+
+        # Create a variable for the physics engine
+        self.physics_engine = None
+
+        # Set up the physics engine
+        self.setup()
+
+    # Set up the physics engine
+    def setup(self):
+        # Create a physics engine for the player
+        self.physics_engine = arcade.PhysicsEnginePlatformer(self.player, self.get_solid_sprites(), GRAVITY)
+
+    # Get the solid sprites for the physics engine
+    def get_solid_sprites(self):
+        # Create a sprite list for the solid sprites
+        solid_list = arcade.SpriteList()
+
+        # Create a sprite for the ground and add it to the solid list
+        ground = arcade.SpriteSolidColor(GROUND_WIDTH, GROUND_HEIGHT, GROUND_COLOR)
+        ground.center_x = GROUND_X
+        ground.center_y = GROUND_Y
+        solid_list.append(ground)
+
+        # Create a sprite for the first platform and add it to the solid list
+        platform_1 = arcade.SpriteSolidColor(PLATFORM_WIDTH, PLATFORM_HEIGHT, PLATFORM_COLOR)
+        platform_1.center_x = PLATFORM_1_X
+        platform_1.center_y = PLATFORM_1_Y
+        solid_list.append(platform_1)
+
+        # Create a sprite for the second platform and add it to the solid list
+        platform_2 = arcade.SpriteSolidColor(PLATFORM_WIDTH, PLATFORM_HEIGHT, PLATFORM_COLOR)
+        platform_2.center_x = PLATFORM_2_X
+        platform_2.center_y = PLATFORM_2_Y
+        solid_list.append(platform_2)
+
+        # Return the solid list
+        return solid_list
+
+    # Draw the game objects
+    def on_draw(self):
+        # Start rendering
+        arcade.start_render()
+
+        # Draw the solid sprites
+        self.get_solid_sprites().draw()
+
+        # Draw the coin sprites
+        self.coin_list.draw()
+
+        # Draw the player sprite
+        self.player_list.draw()
+
+        # Draw the score
+        arcade.draw_text(f"Score: {self.score}", SCORE_X, SCORE_Y, SCORE_COLOR, SCORE_FONT_SIZE, font_name=SCORE_FONT)
+
+    # Update the game logic
+    def update(self, delta_time):
+        # Update the physics engine
+        self.physics_engine.update()
+
+        # Check for collisions between the player and the coins
+        coin_hit_list = arcade.check_for_collision_with_list(self.player, self.coin_list)
+
+        # Loop through the coins that the player hit
+        for coin in coin_hit_list:
+            # Remove the coin from the coin list
+            coin.remove_from_sprite_lists()
+
+            # Increase the score by one
+            self.score += 1
+
+    # Handle the user input
+    def on_key_press(self, key, modifiers):
+        # If the user presses the right arrow key
+        if key == arcade.key.RIGHT:
+            # Set the player's horizontal speed to the right
+            self.player.change_x = PLAYER_SPEED
+
+        # If the user presses the left arrow key
+        elif key == arcade.key.LEFT:
+            # Set the player's horizontal speed to the left
+            self.player.change_x = -PLAYER_SPEED
+
+        # If the user presses the up arrow key
+        elif key == arcade.key.UP:
+            # Make the player jump if it is on the ground
+            if self.physics_engine.can_jump():
+                self.player.change_y = PLAYER_JUMP_SPEED
+
+    # Handle the user input
+    def on_key_release(self, key, modifiers):
+        # If the user releases the right arrow key
+        if key == arcade.key.RIGHT:
+            # Stop the player's horizontal movement
+            self.player.change_x = 0
+
+        # If the user releases the left arrow key
+        elif key == arcade.key.LEFT:
+            # Stop the player's horizontal movement
+            self.player.change_x = 0
+
+# Create an instance of the game window
+window = GameWindow()
+
+# Run the game
+arcade.run()
